@@ -20,8 +20,11 @@ class RealTimeSearch(object):
         
         #最新の情報を格納する
         self._new_data = ""
+        
+        #アップデートが発生したか
+        self.is_update = False
 
-    def search_data(self):
+    def _search_data(self):
         """
         リアルタイム検索を行う
         """
@@ -37,9 +40,41 @@ class RealTimeSearch(object):
 
             self._soup = BeautifulSoup(r.content)
             divs = self._soup.html.body.findAll('div')
+            #最新１件だけを取得
             results = self._get_search_results(divs)
+            return results
 
-    def _get_search_results(self, divs):
+    def get_recent_result(self):
+        results = self._search_data()
+        #検索結果が空
+        if not results:
+            return
+
+        is_set = False 
+
+        try:
+            result_time = results[0]._getAttrMap()['data-time']
+        except KeyError:
+            Exception
+        else:
+            if self._new_data and int(result_time) > int(self._new_data._getAttrMap()['data-time']):
+                is_set = True
+            elif not self._new_data and result_time:
+                is_set = True
+
+            if is_set:
+                self._set_new_data(results[0])
+                self.is_update = True
+
+
+    def _set_new_data(self, result):
+        """
+        _new_dataに最新の検索結果をセット
+        """
+
+        self._new_data = result
+
+    def _get_search_results(self, divs, is_new=True):
         """
         検索結果を取得する
         """
@@ -50,10 +85,13 @@ class RealTimeSearch(object):
                 if TARGET_CLASS_NAME in attr:
                     results.append(div)
                     break
+                
+                if results and is_new:
+                   return results 
 
         return results
 
 
 if __name__ == "__main__":
     rs = RealTimeSearch(u'ランサーズ')
-    rs.search_data()
+    rs.get_recent_result()
