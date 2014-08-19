@@ -48,7 +48,7 @@ class RealTimeSearch(object):
         else:
             status_code = r.status_code
             if status_code != 200:
-                Exception
+                return 
 
             self._soup = BeautifulSoup(r.content)
             divs = self._soup.html.body.findAll('div')
@@ -67,7 +67,7 @@ class RealTimeSearch(object):
         try:
             result_time = results[0]._getAttrMap()['data-time']
         except KeyError:
-            Exception
+            return
         else:
             if self._new_data and int(result_time) > int(self._new_data._getAttrMap()['data-time']):
                 is_set = True
@@ -86,7 +86,8 @@ class RealTimeSearch(object):
         
         message = self._new_data.find('h2').text
         message = message.replace('"', '\\"')
-        notify_command = u"osascript -e 'display notification \"%s\" with title \"検索結果\" subtitle \"検索ワード:%s\"'" % (message, self._keyword)
+        open_url = "http://realtime.search.yahoo.co.jp/search?p=%s&ei=UTF-8" % self._keyword
+        notify_command = u"terminal-notifier -title 検索ワード%s -message \"%s\" -group tokyo -open %s" % (self._keyword, message, open_url)
         notify_command = notify_command.encode('utf-8')
         return notify_command
 
