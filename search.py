@@ -1,15 +1,24 @@
 # -*- encoding: utf-8 -*-
+import os
 import requests
 from BeautifulSoup import BeautifulSoup
+#from apscheduler.scheduler import Scheduler
 
 TARGET_CLASS_NAME = 'cnt cf'
+
+def notify(cmd):
+    """
+    macの通知機能を利用して通知
+    """
+
+    os.system(cmd)
 
 class RealTimeSearch(object):
     """
     Yahooリアルタイム検索の結果を取得する
     """
 
-    def __init__(self, keyword):
+    def __init__(self, keyword, is_debug=False):
         self._keyword = keyword
         self._host = 'http://realtime.search.yahoo.co.jp/search'
         self._params = {
@@ -23,6 +32,9 @@ class RealTimeSearch(object):
         
         #アップデートが発生したか
         self.is_update = False
+
+        #デバッグ用Flag
+        self._is_debug = is_debug
 
     def _search_data(self):
         """
@@ -62,9 +74,21 @@ class RealTimeSearch(object):
             elif not self._new_data and result_time:
                 is_set = True
 
-            if is_set:
+            if is_set or self._is_debug:
                 self._set_new_data(results[0])
-                self.is_update = True
+                notify_command = self._make_notify_command()
+                notify(notify_command)
+            
+    def _make_notify_command(self):
+        """
+        通知用のコマンドを作成
+        """
+        
+        message = self._new_data.find('h2').text
+        message = message.replace('"', '\\"')
+        notify_command = u"osascript -e 'display notification \"%s\" with title \"検索結果\" subtitle \"検索ワード:%s\"'" % (message, self._keyword)
+        notify_command = notify_command.encode('utf-8')
+        return notify_command
 
 
     def _set_new_data(self, result):
@@ -92,6 +116,17 @@ class RealTimeSearch(object):
         return results
 
 
-if __name__ == "__main__":
+def set_schedule():
+    """
+    スケジュールをセット
+    """
+
     rs = RealTimeSearch(u'ランサーズ')
+    sched = Scheduler(standalone=True,coalesce=True)
+    sched.add_interval_job(rs.get_recent_result(), seconds=300)
+
+
+if __name__ == "__main__":
+    #set_schedule()
+    rs = RealTimeSearch(u'ランサーズ', True)
     rs.get_recent_result()
