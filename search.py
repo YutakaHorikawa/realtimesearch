@@ -2,7 +2,7 @@
 import os
 import requests
 from BeautifulSoup import BeautifulSoup
-#from apscheduler.scheduler import Scheduler
+#from apscheduler.schedulers.background import BackgroundScheduler
 
 TARGET_CLASS_NAME = 'cnt cf'
 
@@ -117,17 +117,9 @@ class RealTimeSearch(object):
         return results
 
 
-def set_schedule():
-    """
-    スケジュールをセット
-    """
-
-    rs = RealTimeSearch(u'ランサーズ')
-    sched = Scheduler(standalone=True,coalesce=True)
-    sched.add_interval_job(rs.get_recent_result(), seconds=300)
-
-
 if __name__ == "__main__":
-    #set_schedule()
+    #scheduler = BackgroundScheduler()
+    #scheduler.add_job(job_test, 'trigger', seconds=3)
+    #scheduler.start()
     rs = RealTimeSearch(u'ランサーズ', True)
     rs.get_recent_result()
